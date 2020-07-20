@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
 import pytube
 from pytube import Playlist
 from pytube import exceptions
@@ -20,23 +21,28 @@ class App():
 		botons.pack()
 		underbotons = Frame(self.master)
 		underbotons.pack()
+		listspace = Frame(self.master)
+		listspace.pack()
 
 
 		def d_vid(url):
+			global count
 			try:
 				print("Open video")
 				#downloadingLabel = Label(underbotons, text = "Downloading:")
 				#downloadingLabel.pack()
 				youtube = pytube.YouTube(url)
 				videotittle = youtube.title
-				name = Label(underbotons, text = "Downloading: " + videotittle)
-				name.pack()
+				count = count+1
+				name['text'] = "Downloading: " + videotittle
 				video = youtube.streams.filter(progressive = True, file_extension = 'mp4').order_by('resolution').desc().first()
 				print("Downloading : " + videotittle)
 				video.download(save_in)
+				lalista.insert("", 1, "", text = count, values=(videotittle, "Complete"))
 				print("Download complete")
 			except :
 				print("Video Eliminado")
+				lalista.insert("", 1, "", text = count, values=(videotittle, "Error"))
 
 		def d_list(url):
 			print("Estamos en una lista")
@@ -54,11 +60,13 @@ class App():
 				downloadingLabel.pack()
 				youtube = pytube.YouTube(url)
 				videotittle = youtube.title
+				count = count+1
 				name = Label(underbotons, text = videotittle)
 				name.pack()
 				video = youtube.streams.filter(only_audio=True).first()
 				print("Downloading : " + videotittle)
 				video.download(save_in)
+				# lalista.insert(folder1, "end", "", text = count, values=(videotittle, "OK"))
 				print("Download complete")
 			except :
 				print("Video Eliminado")
@@ -77,13 +85,14 @@ class App():
 
 		def downloadVid(url):
 			global save_in
-			downloadingLabel = Label(body, text = " ")
-			downloadingLabel.pack()
+			global count
+			downloadingLabel['text'] = " "
 			elboton1.config(text = "Please wait...")
 			elboton1.config(state = DISABLED)
 			elboton2.config(text = "Please wait...")
 			elboton2.config(state = DISABLED)
-			downloadingLabel.config(text = "- Downloading - ")
+			downloadingLabel['text'] = " - Downloading - "
+			
 
 			try:
 				print("Coge el link")
@@ -91,19 +100,21 @@ class App():
 				print("select place to save")
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
+				count = 0
 			
 				listrep = re.search(r'playlist', str(url))
 				if listrep:
 					d_list(url)
 				else:
 					d_vid(url)
+				print("Donload finished")
 				finish = Label(underbotons, text = "Download completed")
 				finish.pack()
 				elboton1.config(text = "Download", state = NORMAL)
 				elboton2.config(text = "Download audio", state = NORMAL)
 				video_direction.delete(0, END)
-				downloadingLabel.config(text = " ")
-
+				downloadingLabel['text'] = " "
+				count = 0
 			except Exception as e:
 				print(e)
 				print("Error!")
@@ -111,6 +122,7 @@ class App():
 		def downloadAu(url):
 			print("Estamos en audio")
 			global save_in
+			global count
 			downloadingLabel = Label(body, text = " ")
 			downloadingLabel.pack()
 			elboton1.config(text = "Please wait...")
@@ -125,6 +137,7 @@ class App():
 				print("select place to save")
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
+				count = 0
 			
 				listrep = re.search(r'playlist', str(url))
 				if listrep:
@@ -137,6 +150,7 @@ class App():
 				elboton2.config(text = "Download audio", state = NORMAL)
 				video_direction.delete(0, END)
 				downloadingLabel = Label(underbotons, text = " ")
+				count = 0
 
 			except Exception as e:
 				print(e)
@@ -160,8 +174,23 @@ class App():
 		elboton2.pack(side = RIGHT)
 		downloadingLabel = Label(underbotons, text = " ")
 		downloadingLabel.pack()
-		name = Label(body, text = "")
+		name = Label(underbotons, text = " ")
 		name.pack()
+		lalista = ttk.Treeview(listspace)
+		lalista['columns']=("name", "Download")
+		lalista.pack()
+		lalista.column("#0", width=50, minwidth=50)
+		lalista.column("name", width=450, minwidth=150)
+		lalista.column("Download", width=100, minwidth=20)
+		# lalista.heading("#0",text="ID")
+		# lalista.heading("name", text="Name")
+		# lalista.heading("Download", text="Download")
+		# Level 1
+		folder1=lalista.insert("", 1, "", text="ID", values=("File name","Download",""))
+		# Level 2
+		# lalista.insert(folder1, "end", "", text="photo1.png", values=("23-Jun-17 11:28","PNG file","2.6 KB"))
+		# lalista.insert(folder1, "end", "", text="photo2.png", values=("23-Jun-17 11:29","PNG file","3.2 KB"))
+		# lalista.insert(folder1, "end", "", text="photo3.png", values=("23-Jun-17 11:30","PNG file","3.1 KB"))
 
 
 def main():
