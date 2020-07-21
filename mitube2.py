@@ -4,8 +4,9 @@ from tkinter import ttk
 import pytube
 from pytube import Playlist
 from pytube import exceptions
-import time
-
+from pydub import AudioSegment
+import pydub
+import os
 
 class App():
 	
@@ -24,25 +25,32 @@ class App():
 		listspace = Frame(self.master)
 		listspace.pack()
 
+		def to_mp3():
+			pista = save_in + "/" + videotittle + ".mp4"
+			pydub.AudioSegment.ffmpeg = "/absolute/path/to/ffmpeg"
+			sound  = AudioSegment.from_file(pista)
+			sound.export(save_in + "/" + videotittle + ".mp3", format="mp3")
+			print("Audio change completed")
+			os.remove(pista)
+
 
 		def d_vid(url):
 			global count
 			try:
-				print("Open video")
-				#downloadingLabel = Label(underbotons, text = "Downloading:")
-				#downloadingLabel.pack()
+				print("scanning video")
 				youtube = pytube.YouTube(url)
+				print("Open video")
 				videotittle = youtube.title
 				count = count+1
 				name['text'] = "Downloading: " + videotittle
 				video = youtube.streams.filter(progressive = True, file_extension = 'mp4').order_by('resolution').desc().first()
 				print("Downloading : " + videotittle)
 				video.download(save_in)
-				lalista.insert("", 1, "", text = count, values=(videotittle, "Complete"))
+				lalista.insert(folder1, 1, text = count, values=(videotittle, "Complete"))
 				print("Download complete")
 			except :
 				print("Video Eliminado")
-				lalista.insert("", 1, "", text = count, values=(videotittle, "Error"))
+				lalista.insert(folder1, "end", "", text = count, values=(videotittle, "Error"))
 
 		def d_list(url):
 			print("Estamos en una lista")
@@ -54,22 +62,41 @@ class App():
 				d_vid(video)
 
 		def d_audio_vid(url):
+			global count
 			try:
 				print("Open video")
-				downloadingLabel = Label(underbotons, text = "Downloading:")
-				downloadingLabel.pack()
+				downloadingLabel['text'] = "Downloading:"
 				youtube = pytube.YouTube(url)
 				videotittle = youtube.title
 				count = count+1
-				name = Label(underbotons, text = videotittle)
-				name.pack()
+				name['text'] = videotittle
 				video = youtube.streams.filter(only_audio=True).first()
 				print("Downloading : " + videotittle)
+				print(save_in)
 				video.download(save_in)
-				# lalista.insert(folder1, "end", "", text = count, values=(videotittle, "OK"))
-				print("Download complete")
+				try:
+					print("converting to mp3")
+					pista = str(save_in + "/" + videotittle.replace(".", "") + ".mp4")
+					ruta =  pista.replace("'", "")
+					print(ruta)
+					pydub.AudioSegment.ffmpeg = "/absolute/path/to/ffmpeg"
+					print("Creamos el sound")
+					sound = AudioSegment.from_file(ruta)
+					print("preparamos el mp3")
+					sound.export(save_in + "/" + videotittle + ".mp3", format="mp3")
+					print("todo listo")
+					print("Audio change completed")
+					os.remove(ruta)
+					print("Download complete")
+					lalista.insert(folder1, "end", "", text = count, values=(videotittle, "Complete"))
+				except:
+					print("Can't converted to mp3")
+					lalista.insert(folder1, "end", "", text = count, values=(videotittle, "Error in mp3 export"))
 			except :
 				print("Video Eliminado")
+				lalista.insert(folder1, "end", "", text = count, values=(videotittle, "Error"))
+
+
 
 		def d_audio_list(url):
 			print("Estamos en una lista")
@@ -77,26 +104,29 @@ class App():
 			playlist._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
 			print(playlist)
 			print('Number of audios in playlist: %s' % len(playlist.video_urls))
-			# videotittle = playlist.title
-			# name = Label(underbotons, text = videotittle)
-			# name.pack()
 			for video in playlist:
 				d_audio_vid(video)
 
 		def downloadVid(url):
+			print("---------------")
+			print("STARTING MITUBE")
+			print("---------------")
+			print()
 			global save_in
 			global count
 			downloadingLabel['text'] = " "
-			elboton1.config(text = "Please wait...")
-			elboton1.config(state = DISABLED)
-			elboton2.config(text = "Please wait...")
-			elboton2.config(state = DISABLED)
-			downloadingLabel['text'] = " - Downloading - "
-			
 
 			try:
 				print("Coge el link")
 				url = video_direction.get()
+				if url == "":
+					print("No link disponible")
+					return
+				elboton1.config(text = "Please wait...")
+				elboton1.config(state = DISABLED)
+				elboton2.config(text = "Please wait...")
+				elboton2.config(state = DISABLED)
+				downloadingLabel['text'] = " - Downloading - "
 				print("select place to save")
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
@@ -114,26 +144,35 @@ class App():
 				elboton2.config(text = "Download audio", state = NORMAL)
 				video_direction.delete(0, END)
 				downloadingLabel['text'] = " "
+				path_to_save_video = ""
 				count = 0
 			except Exception as e:
 				print(e)
 				print("Error!")
+				elboton1.config(text = "Download", state = NORMAL)
+				elboton2.config(text = "Download audio", state = NORMAL)
+				video_direction.delete(0, END)
+				downloadingLabel['text'] = " "
+				count = 0
 
 		def downloadAu(url):
 			print("Estamos en audio")
 			global save_in
 			global count
-			downloadingLabel = Label(body, text = " ")
-			downloadingLabel.pack()
-			elboton1.config(text = "Please wait...")
-			elboton1.config(state = DISABLED)
-			elboton2.config(text = "Please wait...")
-			elboton2.config(state = DISABLED)
-			downloadingLabel.config(text = "- Downloading - ")
+			downloadingLabel['text'] = " "
+			
 
 			try:
 				print("Coge el link")
 				url = video_direction.get()
+				if url == "":
+					print("No link disponible")
+					return
+				elboton1.config(text = "Please wait...")
+				elboton1.config(state = DISABLED)
+				elboton2.config(text = "Please wait...")
+				elboton2.config(state = DISABLED)
+				downloadingLabel['text'] = " - Downloading - "
 				print("select place to save")
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
@@ -149,12 +188,18 @@ class App():
 				elboton1.config(text = "Download", state = NORMAL)
 				elboton2.config(text = "Download audio", state = NORMAL)
 				video_direction.delete(0, END)
-				downloadingLabel = Label(underbotons, text = " ")
+				downloadingLabel['text'] = " "
+				path_to_save_video = ""
 				count = 0
 
 			except Exception as e:
 				print(e)
 				print("Error!")
+				elboton1.config(text = "Download", state = NORMAL)
+				elboton2.config(text = "Download audio", state = NORMAL)
+				video_direction.delete(0, END)
+				downloadingLabel['text'] = " "
+				count = 0
 
 
 		#----- BODY -----
@@ -168,6 +213,7 @@ class App():
 		video_direction = Entry(body)
 		video_direction.config(width = 50)
 		video_direction.pack()
+		video_direction.focus()
 		elboton1 = Button(botons, text = "Download", font = ("verdana",15), pady = 20, relief = 'ridge', command = lambda:downloadVid(video_direction.get()))
 		elboton1.pack(side = LEFT)
 		elboton2 = Button(botons, text = "Download audio", font = ("verdana",15), pady = 20, relief = 'ridge', command = lambda:downloadAu(video_direction.get()))
@@ -186,7 +232,7 @@ class App():
 		# lalista.heading("name", text="Name")
 		# lalista.heading("Download", text="Download")
 		# Level 1
-		folder1=lalista.insert("", 1, "", text="ID", values=("File name","Download",""))
+		folder1 = lalista.insert("", 0, "", text="ID", values=("File name","Download",""))
 		# Level 2
 		# lalista.insert(folder1, "end", "", text="photo1.png", values=("23-Jun-17 11:28","PNG file","2.6 KB"))
 		# lalista.insert(folder1, "end", "", text="photo2.png", values=("23-Jun-17 11:29","PNG file","3.2 KB"))
