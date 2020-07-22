@@ -25,13 +25,21 @@ class App():
 		listspace = Frame(self.master)
 		listspace.pack()
 
-		def to_mp3():
-			pista = save_in + "/" + videotittle + ".mp4"
+		def replace_all(text, dic):
+		    for i, j in dic.items():
+		        text = text.replace(i, j)
+		    return text
+
+		def to_mp3(save_in, videotittle):
+			clean_link = {".": "","'":"", "|":"", "*":"", ",":"", "/":"", '"':'', " / ":" ", ":":""}
+			track_name = replace_all(videotittle, clean_link)
+			ruta = str(save_in + "/" + track_name + ".mp4")
+			#print(ruta)
 			pydub.AudioSegment.ffmpeg = "/absolute/path/to/ffmpeg"
-			sound  = AudioSegment.from_file(pista)
+			sound = AudioSegment.from_file(ruta)
 			sound.export(save_in + "/" + videotittle + ".mp3", format="mp3")
-			print("Audio change completed")
-			os.remove(pista)
+			os.remove(ruta)
+			print("Download complete")
 
 
 		def d_vid(url):
@@ -39,7 +47,6 @@ class App():
 			try:
 				print("scanning video")
 				youtube = pytube.YouTube(url)
-				print("Open video")
 				videotittle = youtube.title
 				count = count+1
 				name['text'] = "Downloading: " + videotittle
@@ -63,31 +70,20 @@ class App():
 
 		def d_audio_vid(url):
 			global count
+			videotittle = ""
 			try:
+				count = count+1
 				print("Open video")
 				downloadingLabel['text'] = "Downloading:"
 				youtube = pytube.YouTube(url)
 				videotittle = youtube.title
-				count = count+1
 				name['text'] = videotittle
 				video = youtube.streams.filter(only_audio=True).first()
 				print("Downloading : " + videotittle)
 				print(save_in)
 				video.download(save_in)
 				try:
-					print("converting to mp3")
-					pista = str(save_in + "/" + videotittle.replace(".", "") + ".mp4")
-					ruta =  pista.replace("'", "")
-					print(ruta)
-					pydub.AudioSegment.ffmpeg = "/absolute/path/to/ffmpeg"
-					print("Creamos el sound")
-					sound = AudioSegment.from_file(ruta)
-					print("preparamos el mp3")
-					sound.export(save_in + "/" + videotittle + ".mp3", format="mp3")
-					print("todo listo")
-					print("Audio change completed")
-					os.remove(ruta)
-					print("Download complete")
+					to_mp3(save_in, videotittle)
 					lalista.insert(folder1, "end", "", text = count, values=(videotittle, "Complete"))
 				except:
 					print("Can't converted to mp3")
@@ -105,7 +101,12 @@ class App():
 			print(playlist)
 			print('Number of audios in playlist: %s' % len(playlist.video_urls))
 			for video in playlist:
+				print()
+				print("#########################################################################")
 				d_audio_vid(video)
+				print("#########################################################################")
+				print()
+
 
 		def downloadVid(url):
 			print("---------------")
@@ -115,7 +116,6 @@ class App():
 			global save_in
 			global count
 			downloadingLabel['text'] = " "
-
 			try:
 				print("Coge el link")
 				url = video_direction.get()
@@ -131,7 +131,6 @@ class App():
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
 				count = 0
-			
 				listrep = re.search(r'playlist', str(url))
 				if listrep:
 					d_list(url)
@@ -160,8 +159,6 @@ class App():
 			global save_in
 			global count
 			downloadingLabel['text'] = " "
-			
-
 			try:
 				print("Coge el link")
 				url = video_direction.get()
@@ -177,7 +174,6 @@ class App():
 				path_to_save_video = filedialog.askdirectory()
 				save_in = path_to_save_video
 				count = 0
-			
 				listrep = re.search(r'playlist', str(url))
 				if listrep:
 					d_audio_list(url)
@@ -206,37 +202,38 @@ class App():
 
 		welomeLabel = Label(body, text = "Welcome to MiTube", font = ("verdana", 20))
 		welomeLabel.pack()
+
 		messageLabel = Label(body, text = "\nWith This simple application you will can download videos from YouTube")
 		messageLabel.pack()
+
 		instruction1 = Label(body, text = "\nPlease, enter the link to the video you want download:\n")
 		instruction1.pack()
+
 		video_direction = Entry(body)
 		video_direction.config(width = 50)
 		video_direction.pack()
 		video_direction.focus()
+
 		elboton1 = Button(botons, text = "Download", font = ("verdana",15), pady = 20, relief = 'ridge', command = lambda:downloadVid(video_direction.get()))
 		elboton1.pack(side = LEFT)
 		elboton2 = Button(botons, text = "Download audio", font = ("verdana",15), pady = 20, relief = 'ridge', command = lambda:downloadAu(video_direction.get()))
 		elboton2.pack(side = RIGHT)
+
 		downloadingLabel = Label(underbotons, text = " ")
 		downloadingLabel.pack()
+
 		name = Label(underbotons, text = " ")
 		name.pack()
+
 		lalista = ttk.Treeview(listspace)
 		lalista['columns']=("name", "Download")
 		lalista.pack()
 		lalista.column("#0", width=50, minwidth=50)
 		lalista.column("name", width=450, minwidth=150)
 		lalista.column("Download", width=100, minwidth=20)
-		# lalista.heading("#0",text="ID")
-		# lalista.heading("name", text="Name")
-		# lalista.heading("Download", text="Download")
-		# Level 1
+
 		folder1 = lalista.insert("", 0, "", text="ID", values=("File name","Download",""))
-		# Level 2
-		# lalista.insert(folder1, "end", "", text="photo1.png", values=("23-Jun-17 11:28","PNG file","2.6 KB"))
-		# lalista.insert(folder1, "end", "", text="photo2.png", values=("23-Jun-17 11:29","PNG file","3.2 KB"))
-		# lalista.insert(folder1, "end", "", text="photo3.png", values=("23-Jun-17 11:30","PNG file","3.1 KB"))
+
 
 
 def main():
